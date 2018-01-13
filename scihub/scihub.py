@@ -79,7 +79,15 @@ class SciHub(object):
 
         while True:
             try:
-                res = self.sess.get(SCHOLARS_BASE_URL, params={'q': query, 'start': start})
+                res = self.sess.get(
+                    SCHOLARS_BASE_URL, 
+                    params={
+                        'hl': 'en',
+                        'as_sdt': '0%2C5',
+                        'q': query
+                        # 'start': start
+                        }
+                )
             except requests.exceptions.RequestException as e:
                 results['err'] = 'Failed to complete search with query %s (connection error)' % query
                 return results
@@ -97,6 +105,7 @@ class SciHub(object):
                     source = None
                     pdf = paper.find('div', class_='gs_ggs gs_fl')
                     link = paper.find('h3', class_='gs_rt')
+                    authors = paper.find('div', class_='gs_a')
 
                     if pdf:
                         source = pdf.find('a')['href']
@@ -105,9 +114,15 @@ class SciHub(object):
                     else:
                         continue
 
+                    if authors:
+                        authors = authors.get_text()
+                        authors = re.sub(r"-.*", "", authors)
+                        authors = [e.strip() for e in authors.split(", ")]
+
                     results['papers'].append({
                         'name': link.text,
-                        'url': source
+                        'url': source,
+                        'authors': authors
                     })
 
                     if len(results['papers']) >= limit:
